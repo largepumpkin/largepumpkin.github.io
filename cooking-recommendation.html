@@ -785,7 +785,7 @@
         border-color: #adb5bd;
     }
     
-    .export-button, .import-button {
+    .export-button, .import-button, .update-button {
         flex: 0 0 auto;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -802,7 +802,7 @@
         gap: 6px;
     }
     
-    .export-button:hover, .import-button:hover {
+    .export-button:hover, .import-button:hover, .update-button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
@@ -1327,6 +1327,10 @@
                         <button class="import-button" onclick="document.getElementById('importFileInput').click()">
                             <span class="button-icon">📥</span>
                             导入
+                        </button>
+                        <button class="update-button" onclick="updateLocalJsonFile()">
+                            <span class="button-icon">💾</span>
+                            更新本地文件
                         </button>
                         <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importCustomDishes(this)">
                     </div>
@@ -2238,6 +2242,7 @@
             loadDishRatings();
             showTopDishes();
             showTopDishesInRecommendation();
+            loadExternalCustomDishes();
         };
 
         // 评分相关功能
@@ -2510,51 +2515,197 @@
                 ];
             }
             
-            // 处理图片
-            let image;
-            if (fileInput.files && fileInput.files[0]) {
-                // 使用本地图片路径
-                image = `images/${dishName}.jpg`;
-            } else {
-                // 自动生成图片
-                image = `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(dishName + ' chinese dish')}&image_size=landscape_4_3`;
-            }
-            
-            // 创建新菜品
-            const newDish = {
-                name: dishName,
-                tags: ['自定义'],
-                description: `用户自定义菜品：${dishName}`,
-                nutrition: { calories: 200, protein: 10, fat: 8, carbs: 15 },
-                ingredients: ['根据实际情况准备'],
-                steps: steps,
-                image: image,
-                color: '#667eea'
+            // 处理图片 - 将图片转为Base64
+            const processImage = (file) => {
+                return new Promise((resolve) => {
+                    if (!file) {
+                        // 自动生成图片
+                        resolve(`https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodeURIComponent(dishName + ' chinese dish')}&image_size=landscape_4_3`);
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        resolve(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                });
             };
             
-            // 确保家常菜类别存在
-            if (!dishes['家常菜']) {
-                dishes['家常菜'] = [];
-            }
+            // 根据菜名自动生成食材
+            const generateIngredients = (name) => {
+                const ingredients = [];
+                const nameLower = name.toLowerCase();
+                
+                // 通用食材
+                if (nameLower.includes('鸡丁') || nameLower.includes('鸡肉') || nameLower.includes('鸡')) {
+                    ingredients.push('鸡肉 500g');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('料酒 1勺');
+                    ingredients.push('盐 适量');
+                }
+                
+                if (nameLower.includes('牛肉') || nameLower.includes('牛排') || nameLower.includes('牛')) {
+                    ingredients.push('牛肉 500g');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('料酒 1勺');
+                    ingredients.push('生抽 1勺');
+                }
+                
+                if (nameLower.includes('鱼')) {
+                    ingredients.push('鱼 1条');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('料酒 1勺');
+                    ingredients.push('盐 适量');
+                }
+                
+                if (nameLower.includes('猪肉') || nameLower.includes('排骨') || nameLower.includes('红烧肉')) {
+                    ingredients.push('猪肉 500g');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('料酒 1勺');
+                    ingredients.push('生抽 1勺');
+                }
+                
+                if (nameLower.includes('番茄') || nameLower.includes('西红柿')) {
+                    ingredients.push('番茄 2个');
+                    if (nameLower.includes('炒蛋') || nameLower.includes('鸡蛋')) {
+                        ingredients.push('鸡蛋 3个');
+                        ingredients.push('盐 适量');
+                        ingredients.push('糖 少许');
+                    }
+                }
+                
+                if (nameLower.includes('蛋') || nameLower.includes('鸡蛋')) {
+                    if (!ingredients.some(ing => ing.includes('鸡蛋'))) {
+                        ingredients.push('鸡蛋 3个');
+                        ingredients.push('盐 适量');
+                    }
+                }
+                
+                if (nameLower.includes('豆腐')) {
+                    ingredients.push('豆腐 1块');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('盐 适量');
+                }
+                
+                if (nameLower.includes('蔬菜') || nameLower.includes('青菜') || nameLower.includes('白菜') || nameLower.includes('菠菜') || nameLower.includes('西兰花')) {
+                    if (nameLower.includes('西兰花')) {
+                        ingredients.push('西兰花 1颗');
+                    } else if (nameLower.includes('白菜')) {
+                        ingredients.push('白菜 1颗');
+                    } else if (nameLower.includes('菠菜')) {
+                        ingredients.push('菠菜 250g');
+                    } else {
+                        ingredients.push('青菜 250g');
+                    }
+                    ingredients.push('蒜 适量');
+                    ingredients.push('盐 适量');
+                }
+                
+                if (nameLower.includes('土豆') || nameLower.includes('马铃薯')) {
+                    ingredients.push('土豆 2个');
+                    ingredients.push('盐 适量');
+                    if (nameLower.includes('青椒')) {
+                        ingredients.push('青椒 1个');
+                    }
+                }
+                
+                if (nameLower.includes('青椒') || nameLower.includes('辣椒')) {
+                    if (!ingredients.some(ing => ing.includes('青椒'))) {
+                        ingredients.push('青椒 1个');
+                    }
+                }
+                
+                if (nameLower.includes('汤')) {
+                    ingredients.push('清水 适量');
+                    ingredients.push('盐 适量');
+                }
+                
+                if (nameLower.includes('炒') || nameLower.includes('煎') || nameLower.includes('煮')) {
+                    ingredients.push('食用油 适量');
+                }
+                
+                // 如果没有生成任何食材，添加默认食材
+                if (ingredients.length === 0) {
+                    ingredients.push('主食材 500g');
+                    ingredients.push('葱姜 适量');
+                    ingredients.push('盐 适量');
+                    ingredients.push('食用油 适量');
+                }
+                
+                return ingredients;
+            };
             
-            // 检查是否存在同名菜品
-            const existingIndex = dishes['家常菜'].findIndex(dish => dish.name === dishName);
+            // 异步处理图片并创建菜品
+            processImage(fileInput.files[0]).then(image => {
+                // 生成食材
+                const ingredients = generateIngredients(dishName);
+                
+                // 创建新菜品
+                const newDish = {
+                    name: dishName,
+                    tags: ['自定义'],
+                    description: `用户自定义菜品：${dishName}`,
+                    nutrition: { calories: 200, protein: 10, fat: 8, carbs: 15 },
+                    ingredients: ingredients,
+                    steps: steps,
+                    image: image,
+                    color: '#667eea'
+                };
+                
+                // 确保家常菜类别存在
+                if (!dishes['家常菜']) {
+                    dishes['家常菜'] = [];
+                }
+                
+                // 检查是否存在同名菜品
+                const existingIndex = dishes['家常菜'].findIndex(dish => dish.name === dishName);
+                
+                if (existingIndex !== -1) {
+                    // 替换为新的信息
+                    dishes['家常菜'][existingIndex] = newDish;
+                    addMessage(`已更新菜品【${dishName}】的信息！`, 'bot');
+                } else {
+                    // 添加新菜品
+                    dishes['家常菜'].unshift(newDish);
+                    addMessage(`已添加自定义菜品【${dishName}】！`, 'bot');
+                }
+                
+                // 保存到localStorage
+                saveCustomDishes();
+                
+                // 清空表单
+                resetForm();
+            });
+        }
+        
+        function updateLocalJsonFile() {
+            const customDishes = (dishes['家常菜'] || []).filter(dish => dish.tags && dish.tags.includes('自定义'));
             
-            if (existingIndex !== -1) {
-                // 替换为新的信息
-                dishes['家常菜'][existingIndex] = newDish;
-                addMessage(`已更新菜品【${dishName}】的信息！`, 'bot');
-            } else {
-                // 添加新菜品
-                dishes['家常菜'].unshift(newDish);
-                addMessage(`已添加自定义菜品【${dishName}】！`, 'bot');
-            }
+            const exportData = {
+                version: '2.0',
+                exportDate: new Date().toISOString(),
+                dishes: customDishes,
+                ratings: Object.fromEntries(
+                    Object.entries(dishRatings).filter(([name]) => 
+                        customDishes.some(d => d.name === name)
+                    )
+                )
+            };
             
-            // 保存到localStorage
-            saveCustomDishes();
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             
-            // 清空表单
-            resetForm();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'custom-dishes.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addMessage('已更新本地 custom-dishes.json 文件！', 'bot');
         }
 
         function resetForm() {
@@ -2572,30 +2723,8 @@
                 return;
             }
             
-            const exportData = {
-                version: '1.0',
-                exportDate: new Date().toISOString(),
-                dishes: customDishes,
-                ratings: Object.fromEntries(
-                    Object.entries(dishRatings).filter(([name]) => 
-                        customDishes.some(d => d.name === name)
-                    )
-                )
-            };
-            
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `自定义菜品备份_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            addMessage(`已成功导出 ${customDishes.length} 个自定义菜品！`, 'bot');
+            updateLocalJsonFile();
+            addMessage(`已成功导出 ${customDishes.length} 个自定义菜品到 custom-dishes.json！`, 'bot');
         }
 
         function importCustomDishes(fileInput) {
@@ -2649,6 +2778,42 @@
             };
             reader.readAsText(file);
             fileInput.value = '';
+        }
+
+        // 页面加载时自动从custom-dishes.json加载自定义菜品
+        async function loadExternalCustomDishes() {
+            try {
+                const response = await fetch('custom-dishes.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.dishes && Array.isArray(data.dishes)) {
+                        data.dishes.forEach(dish => {
+                            if (!dish.name) return;
+                            
+                            const existingIndex = dishes['家常菜'].findIndex(d => d.name === dish.name);
+                            
+                            if (existingIndex === -1) {
+                                if (!dishes['家常菜']) {
+                                    dishes['家常菜'] = [];
+                                }
+                                dishes['家常菜'].push(dish);
+                            } else {
+                                // 更新已存在的菜品信息
+                                dishes['家常菜'][existingIndex] = dish;
+                            }
+                            
+                            if (data.ratings && data.ratings[dish.name]) {
+                                dishRatings[dish.name] = data.ratings[dish.name];
+                            }
+                        });
+                        saveCustomDishes();
+                        saveDishRatings();
+                        console.log('已加载外部自定义菜品');
+                    }
+                }
+            } catch (error) {
+                // 外部文件不存在，忽略错误
+            }
         }
 
         // 监听文件选择
