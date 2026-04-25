@@ -1,0 +1,120 @@
+{
+  "version": "1.0",
+  "exportDate": "2026-04-25T04:51:39.915Z",
+  "dishes": [
+    {
+      "name": "番茄鱼",
+      "tags": [
+        "自定义"
+      ],
+      "description": "用户自定义菜品：番茄鱼",
+      "nutrition": {
+        "calories": 200,
+        "protein": 10,
+        "fat": 8,
+        "carbs": 15
+      },
+      "ingredients": [
+        "根据实际情况准备"
+      ],
+      "steps": [
+        {
+          "title": "准备食材",
+          "content": "一、番茄鱼 家常详细做法",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤1",
+          "content": "食材",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤2",
+          "content": "巴沙鱼 / 黑鱼 500g、番茄 3 个、姜片、蒜末、葱花、盐、白胡椒粉、料酒、生抽、淀粉、白糖、食用油",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤3",
+          "content": "步骤",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤4",
+          "content": "腌鱼",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤5",
+          "content": "鱼肉切薄片，加少许盐、白胡椒粉、料酒、1 勺淀粉、少许食用油，抓匀腌制 10 分钟，肉片更嫩不碎。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤7",
+          "content": "处理番茄",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤8",
+          "content": "番茄顶部划十字，开水烫去皮，切小块备用。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤9",
+          "content": "炒番茄汤底",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤10",
+          "content": "热锅倒油，放姜蒜爆香，倒入番茄块，小火慢慢炒出沙，加少许白糖中和酸味，加适量清水煮开。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤11",
+          "content": "调味",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤12",
+          "content": "加少许盐、生抽调味，中小火煮 2 分钟，让汤味浓郁。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤13",
+          "content": "下鱼片",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤14",
+          "content": "转小火，分散下入鱼片，不要搅动，待鱼片定型后轻轻推开。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤15",
+          "content": "出锅",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤16",
+          "content": "鱼片全部变白熟透，关火，撒葱花，滴少许香油即可。",
+          "image": "🍳"
+        },
+        {
+          "title": "步骤17",
+          "content": "汤汁酸甜浓郁，鱼肉滑嫩，超下饭。",
+          "image": "🍳"
+        }
+      ],
+      "image": "images/番茄鱼.jpg",
+      "color": "#667eea"
+    }
+  ],
+  "ratings": {
+    "番茄鱼": {
+      "score": 0,
+      "liked": false,
+      "disliked": false,
+      "likeCount": 0,
+      "dislikeCount": 0
+    }
+  }
+}
