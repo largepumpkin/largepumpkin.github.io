@@ -784,6 +784,28 @@
         border-color: #adb5bd;
     }
     
+    .export-button, .import-button {
+        flex: 0 0 auto;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    
+    .export-button:hover, .import-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
     .button-icon {
             font-size: 16px;
         }
@@ -1297,6 +1319,15 @@
                             <span class="button-icon">🔄</span>
                             重置
                         </button>
+                        <button class="export-button" onclick="exportCustomDishes()">
+                            <span class="button-icon">📤</span>
+                            导出
+                        </button>
+                        <button class="import-button" onclick="document.getElementById('importFileInput').click()">
+                            <span class="button-icon">📥</span>
+                            导入
+                        </button>
+                        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importCustomDishes(this)">
                     </div>
                 </div>
             </div>
@@ -2530,6 +2561,93 @@
             document.getElementById('dishSteps').value = '';
             document.getElementById('dishImageUpload').value = '';
             document.getElementById('fileName').textContent = '';
+        }
+
+        function exportCustomDishes() {
+            const customDishes = (dishes['家常菜'] || []).filter(dish => dish.tags && dish.tags.includes('自定义'));
+            
+            if (customDishes.length === 0) {
+                addMessage('当前没有自定义菜品可以导出。', 'bot');
+                return;
+            }
+            
+            const exportData = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                dishes: customDishes,
+                ratings: Object.fromEntries(
+                    Object.entries(dishRatings).filter(([name]) => 
+                        customDishes.some(d => d.name === name)
+                    )
+                )
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `自定义菜品备份_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            addMessage(`已成功导出 ${customDishes.length} 个自定义菜品！`, 'bot');
+        }
+
+        function importCustomDishes(fileInput) {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    if (!importData.dishes || !Array.isArray(importData.dishes)) {
+                        addMessage('导入失败：文件格式不正确。', 'bot');
+                        return;
+                    }
+                    
+                    let importedCount = 0;
+                    let updatedCount = 0;
+                    
+                    importData.dishes.forEach(dish => {
+                        if (!dish.name) return;
+                        
+                        const existingIndex = dishes['家常菜'].findIndex(d => d.name === dish.name);
+                        
+                        if (existingIndex !== -1) {
+                            dishes['家常菜'][existingIndex] = dish;
+                            updatedCount++;
+                        } else {
+                            if (!dishes['家常菜']) {
+                                dishes['家常菜'] = [];
+                            }
+                            dishes['家常菜'].unshift(dish);
+                            importedCount++;
+                        }
+                        
+                        if (importData.ratings && importData.ratings[dish.name]) {
+                            dishRatings[dish.name] = importData.ratings[dish.name];
+                        }
+                    });
+                    
+                    saveCustomDishes();
+                    saveDishRatings();
+                    addMessage(`导入完成：新增 ${importedCount} 个菜品，更新 ${updatedCount} 个菜品。`, 'bot');
+                    
+                    if (importedCount > 0 || updatedCount > 0) {
+                        showTopDishesInRecommendation();
+                    }
+                } catch (error) {
+                    addMessage('导入失败：文件读取错误。', 'bot');
+                }
+            };
+            reader.readAsText(file);
+            fileInput.value = '';
         }
 
         // 监听文件选择
